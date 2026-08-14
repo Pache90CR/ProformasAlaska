@@ -46,7 +46,7 @@ st.markdown("""
 if os.path.exists("logo.png"):
     col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
     with col_l2:
-        st.image("logo.png", width=250)
+        st.image("logo.png", width=180)
 
 st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)

@@ -123,38 +123,24 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
 
     # --- GENERADOR DE PDF ---
     def generar_pdf():
-        # Registrar fuentes que soportan el símbolo Unicode de colones ₡
+        # Registrar fuente con soporte Unicode garantizado usando matplotlib
         font_regular = "Helvetica"
         font_bold = "Helvetica-Bold"
 
-        rutas_fuente_regular = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-            "C:/Windows/Fonts/arial.ttf"
-        ]
-        rutas_fuente_bold = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
-            "C:/Windows/Fonts/arialbd.ttf"
-        ]
-
-        for ruta in rutas_fuente_regular:
-            if os.path.exists(ruta):
-                try:
-                    pdfmetrics.registerFont(TTFont('UnicodeSans', ruta))
-                    font_regular = 'UnicodeSans'
-                    break
-                except Exception:
-                    pass
-
-        for ruta in rutas_fuente_bold:
-            if os.path.exists(ruta):
-                try:
-                    pdfmetrics.registerFont(TTFont('UnicodeSans-Bold', ruta))
-                    font_bold = 'UnicodeSans-Bold'
-                    break
-                except Exception:
-                    pass
+        try:
+            import matplotlib
+            mpl_ttf = os.path.join(matplotlib.get_data_path(), 'fonts', 'ttf', 'DejaVuSans.ttf')
+            mpl_ttf_bold = os.path.join(matplotlib.get_data_path(), 'fonts', 'ttf', 'DejaVuSans-Bold.ttf')
+            
+            if os.path.exists(mpl_ttf):
+                pdfmetrics.registerFont(TTFont('UnicodeSans', mpl_ttf))
+                font_regular = 'UnicodeSans'
+                
+            if os.path.exists(mpl_ttf_bold):
+                pdfmetrics.registerFont(TTFont('UnicodeSans-Bold', mpl_ttf_bold))
+                font_bold = 'UnicodeSans-Bold'
+        except Exception:
+            pass
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
@@ -239,4 +225,4 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
     )
 
 else:
-    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio arriba, y presiona '➕ Agregar a la Proforma'." )
+    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio arriba, y presiona '➕ Agregar a la Proforma'.")

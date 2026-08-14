@@ -14,24 +14,12 @@ st.set_page_config(
     layout="centered"
 )
 
-# Estilo personalizado para botones e interfaz
+# Estilos visuales
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #F4F1EA;
-    }
-    .main-title {
-        color: #1E2D4A;
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 0px;
-    }
-    .sub-title {
-        color: #555555;
-        text-align: center;
-        font-weight: bold;
-        margin-top: 0px;
-    }
+    .stApp { background-color: #F4F1EA; }
+    .main-title { color: #1E2D4A; text-align: center; font-weight: bold; margin-bottom: 0px; }
+    .sub-title { color: #555555; text-align: center; font-weight: bold; margin-top: 0px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -41,7 +29,7 @@ st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True
 st.caption("📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829")
 st.divider()
 
-# --- ESTADO DE LA SESIÓN (Para guardar los ítems dinámicamente) ---
+# --- ESTADO DE LA SESIÓN ---
 if "items" not in st.session_state:
     st.session_state.items = []
 
@@ -80,6 +68,7 @@ if st.button("➕ Agregar Ítem", use_container_width=True):
             "Total (₡)": cantidad * precio
         })
         st.success(f"¡'{descripcion}' agregado correctamente!")
+        st.rerun()
     else:
         st.warning("Por favor ingresa una descripción y un precio mayor a 0.")
 
@@ -87,13 +76,14 @@ if st.button("➕ Agregar Ítem", use_container_width=True):
 st.divider()
 st.subheader("📄 Resumen de Proforma")
 
-if st.session_state.items:
+if len(st.session_state.items) > 0:
+    # Convertimos la lista a DataFrame sólo cuando tiene datos
     df = pd.DataFrame(st.session_state.items)
     
     # Formato para la vista en pantalla
     df_display = df.copy()
-    df_display["Precio Unitario (₡)"] = df_display["Precio Unitario (₡)"].map("₡{:,.2f}".format)
-    df_display["Total (₡)"] = df_display["Total (₡)"].map("₡{:,.2f}".format)
+    df_display["Precio Unitario (₡)"] = df_display["Precio Unitario (₡)"].apply(lambda x: f"₡{x:,.2f}")
+    df_display["Total (₡)"] = df_display["Total (₡)"].apply(lambda x: f"₡{x:,.2f}")
     
     st.dataframe(df_display, use_container_width=True)
 
@@ -106,19 +96,16 @@ if st.session_state.items:
         st.session_state.items = []
         st.rerun()
 
-    # --- FUNCIÓN GENERADORA DE PDF ---
+    # --- GENERADOR DE PDF ---
     def generar_pdf():
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
         elements = []
-
         styles = getSampleStyleSheet()
         
-        # Estilos personalizados para PDF
         title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=20, leading=22, textColor=colors.HexColor('#1E2D4A'), alignment=1)
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
-        bold_body = ParagraphStyle('BoldBody', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=12)
 
         # Encabezado PDF
         elements.append(Paragraph("ALASKA BAR RESTAURANTE", title_style))
@@ -172,14 +159,15 @@ if st.session_state.items:
     # Botón de Descarga PDF
     st.divider()
     pdf_bytes = generar_pdf()
+    nombre_archivo = cliente.strip().replace(" ", "_") if cliente.strip() else "Cliente"
+    
     st.download_button(
         label="📥 Descargar Proforma en PDF",
         data=pdf_bytes,
-        file_name=f"Proforma_Alaska_{cliente.replace(' ', '_')}.pdf",
+        file_name=f"Proforma_Alaska_{nombre_archivo}.pdf",
         mime="application/pdf",
         use_container_width=True
     )
 
 else:
-    st.info("Aún no has agregado ítems a esta proforma.")
-
+    st.info("💡 Aún no has agregado ítems a esta proforma. Llena los datos arriba y presiona '+ Agregar Ítem'.")

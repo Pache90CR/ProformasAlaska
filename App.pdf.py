@@ -120,7 +120,8 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
     observaciones = st.text_area(
         "📝 Observaciones o Condiciones Especiales:",
         value="Se requiere un depósito del 50% para confirmar la reservación. Cotización válida por 15 días.",
-        help="Este texto aparecerá en el recuadro de observaciones en la parte inferior del PDF."
+        help="Este texto aparecerá en el recuadro de observaciones en la parte inferior del PDF.",
+        key="obs_texto"
     )
 
     # Botón para vaciar proforma
@@ -128,8 +129,8 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         st.session_state["items"] = []
         st.rerun()
 
-    # --- GENERADOR DE PDF ---
-    def generar_pdf():
+    # --- GENERADOR DE PDF (RECIBE EL TEXTO DE OBSERVACIONES ACTUALIZADO) ---
+    def generar_pdf(texto_obs):
         # Registrar fuente con soporte Unicode garantizado usando matplotlib
         font_regular = "Helvetica"
         font_bold = "Helvetica-Bold"
@@ -213,18 +214,21 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         elements.append(t)
         elements.append(Spacer(1, 20))
 
-        # --- RECUADRO DE OBSERVACIONES ESTILIZADO (IGUAL A LA IMAGEN) ---
-        if observaciones.strip():
+        # --- RECUADRO DE OBSERVACIONES CON SOPORTE PARA MÚLTIPLES LÍNEAS ---
+        if texto_obs and texto_obs.strip():
+            # Convertir saltos de línea (\n) a etiquetas de salto de línea de ReportLab (<br/>)
+            obs_formatted = texto_obs.strip().replace("\n", "<br/>")
+
             obs_header_style = ParagraphStyle('ObsHeader', fontName=font_bold, fontSize=9, textColor=colors.white, alignment=1)
-            obs_text_style = ParagraphStyle('ObsText', fontName=font_regular, fontSize=9, textColor=colors.HexColor('#2B2B2B'), leading=11)
+            obs_text_style = ParagraphStyle('ObsText', fontName=font_regular, fontSize=9, textColor=colors.HexColor('#2B2B2B'), leading=12)
 
             obs_table_data = [
-                [Paragraph("OBSERVACIONES", obs_header_style), Paragraph(observaciones.strip(), obs_text_style)]
+                [Paragraph("OBSERVACIONES", obs_header_style), Paragraph(obs_formatted, obs_text_style)]
             ]
 
             obs_table = Table(obs_table_data, colWidths=[120, 420])
             obs_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (0,0), colors.HexColor('#1E2D4A')), # Color corporativo azul marino
+                ('BACKGROUND', (0,0), (0,0), colors.HexColor('#1E2D4A')), # Azul marino corporativo
                 ('BACKGROUND', (1,0), (1,0), colors.white),
                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                 ('ALIGN', (0,0), (0,0), 'CENTER'),
@@ -244,9 +248,9 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         buffer.seek(0)
         return buffer
 
-    # Botón de Descarga PDF
+    # Botón de Descarga PDF con el contenido exacto redactado
     st.divider()
-    pdf_bytes = generar_pdf()
+    pdf_bytes = generar_pdf(observaciones)
     nombre_archivo = cliente.strip().replace(" ", "_") if cliente.strip() else "Cliente"
     
     st.download_button(

@@ -42,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO Y LOGO PEQUEÑO EN PANTALLA ---
+# --- ENCABEZADO Y LOGO EN PANTALLA ---
 if os.path.exists("logo.png"):
     col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
     with col_l2:
@@ -53,67 +53,58 @@ st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True
 st.markdown("<div class='contact-info'>📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829</div>", unsafe_allow_html=True)
 st.divider()
 
-# --- INICIALIZACIÓN SEGURA DE SESIÓN ---
+# --- INICIALIZACIÓN SEGURA DE LA LISTA DE ÍTEMS ---
 if "items" not in st.session_state or not isinstance(st.session_state.items, list):
-    st.session_state["items"] = []
+    st.session_state.items = []
 
 # --- DATOS DEL CLIENTE ---
 st.subheader("📋 Datos del Cliente y Evento")
 col_c1, col_c2 = st.columns(2)
 
 with col_c1:
-    cliente = st.text_input("Nombre del Cliente / Empresa:", placeholder="Ej. María Rodríguez", key="input_cliente")
-    telefono_cliente = st.text_input("Teléfono del Cliente:", placeholder="Ej. 8888 8888", key="input_telefono")
+    cliente = st.text_input("Nombre del Cliente / Empresa:", placeholder="Ej. María Rodríguez")
+    telefono_cliente = st.text_input("Teléfono del Cliente:", placeholder="Ej. 8888 8888")
 
 with col_c2:
-    fecha_evento = st.date_input("Fecha del Evento:", value=date.today(), key="input_fecha")
-    tipo_evento = st.selectbox("Tipo de Evento:", ["Cumpleaños", "Corporativo", "Reserva Especial", "Catering", "Otro"], key="input_tipo")
+    fecha_evento = st.date_input("Fecha del Evento:", value=date.today())
+    tipo_evento = st.selectbox("Tipo de Evento:", ["Cumpleaños", "Corporativo", "Reserva Especial", "Catering", "Otro"])
 
 st.divider()
 
-# --- AGREGAR ÍTEMS SIN FORMULARIO (MÁXIMA COMPATIBILIDAD CON CELULARES) ---
+# --- AGREGAR ÍTEMS ---
 st.subheader("🛒 Agregar Platillos / Servicios")
 
-descripcion = st.text_input("Descripción del Producto/Servicio:", placeholder="Ej. Plato Fuerte: Corte de Carne", key="item_desc")
+descripcion = st.text_input("Descripción del Producto/Servicio:", placeholder="Ej. Plato Fuerte: Corte de Carne")
 
 col_i1, col_i2 = st.columns(2)
 with col_i1:
-    cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1, key="item_cant")
+    cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1)
 with col_i2:
-    precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0, key="item_precio")
+    precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
 
-# Función callback para agregar ítem sin perder sincronía
-def agregar_item_callback():
-    desc_val = st.session_state.get("item_desc", "").strip()
-    cant_val = int(st.session_state.get("item_cant", 1))
-    precio_val = float(st.session_state.get("item_precio", 0.0))
-
-    if desc_val != "" and precio_val > 0:
-        st.session_state["items"].append({
-            "desc": desc_val,
-            "cant": cant_val,
-            "precio": precio_val,
-            "total": float(cant_val * precio_val)
+# BOTÓN CON LÓGICA DIRECTA Y RERUN
+if st.button("➕ Agregar a la Proforma", use_container_width=True):
+    if descripcion.strip() != "" and precio > 0:
+        st.session_state.items.append({
+            "desc": descripcion.strip(),
+            "cant": int(cantidad),
+            "precio": float(precio),
+            "total": float(cantidad * precio)
         })
-        # Limpiar campos de entrada para el siguiente producto
-        st.session_state["item_desc"] = ""
-        st.session_state["item_cant"] = 1
-        st.session_state["item_precio"] = 0.0
-        st.toast("✅ Ítem agregado correctamente")
+        st.success(f"¡'{descripcion}' agregado exitosamente!")
+        st.rerun()
     else:
         st.warning("⚠️ Ingresa una descripción y un precio mayor a ₡0.")
-
-st.button("➕ Agregar a la Proforma", on_click=agregar_item_callback, use_container_width=True)
 
 # --- TABLA Y TOTALES ---
 st.divider()
 st.subheader("📄 Resumen de Proforma")
 
-if len(st.session_state["items"]) > 0:
+if len(st.session_state.items) > 0:
     tabla_mostrar = []
     subtotal = 0.0
     
-    for item in st.session_state["items"]:
+    for item in st.session_state.items:
         subtotal += item["total"]
         tabla_mostrar.append({
             "Cant.": item["cant"],
@@ -122,14 +113,14 @@ if len(st.session_state["items"]) > 0:
             "Total": f"₡{item['total']:,.2f}"
         })
     
+    # Muestra la tabla de productos ingresados
     st.table(tabla_mostrar)
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
     # Botón para limpiar proforma
-    def vaciar_proforma_callback():
-        st.session_state["items"] = []
-
-    st.button("🗑️ Vaciar Proforma", on_click=vaciar_proforma_callback, use_container_width=True)
+    if st.button("🗑️ Vaciar Proforma", use_container_width=True):
+        st.session_state.items = []
+        st.rerun()
 
     # --- GENERADOR DE PDF ---
     def generar_pdf():
@@ -142,7 +133,7 @@ if len(st.session_state["items"]) > 0:
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
 
-        # 1. Agregar Logo en PDF
+        # 1. Agregar Logo en PDF si existe
         if os.path.exists("logo.png"):
             try:
                 img_logo = Image("logo.png", width=90, height=90)
@@ -170,7 +161,7 @@ if len(st.session_state["items"]) > 0:
 
         # Tabla de Detalles
         table_data = [["Cant.", "Descripción", "P. Unitario", "Total"]]
-        for item in st.session_state["items"]:
+        for item in st.session_state.items:
             table_data.append([
                 str(item['cant']),
                 item['desc'],
@@ -215,4 +206,4 @@ if len(st.session_state["items"]) > 0:
     )
 
 else:
-    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio, y toca '➕ Agregar a la Proforma'.")
+    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio arriba, y presiona '➕ Agregar a la Proforma'.")

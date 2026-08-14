@@ -239,4 +239,4 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
     )
 
 else:
-    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio arriba, y presiona '➕ Agregar a la Proforma'."
+    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio arriba, y presiona '➕ Agregar a la Proforma'." )

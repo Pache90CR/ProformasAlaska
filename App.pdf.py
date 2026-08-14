@@ -6,6 +6,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -42,7 +44,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO ---
+# --- ENCABEZADO PANTALLA PRINCIPAL ---
 st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)
 st.markdown("<div class='contact-info'>📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829</div>", unsafe_allow_html=True)
@@ -77,7 +79,7 @@ with col_i1:
 with col_i2:
     precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
 
-# BOTÓN
+# BOTÓN CON VERIFICACIÓN SEGURA
 if st.button("➕ Agregar a la Proforma", use_container_width=True):
     if descripcion.strip() != "" and precio > 0:
         if not isinstance(st.session_state["items"], list):
@@ -119,16 +121,49 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         st.session_state["items"] = []
         st.rerun()
 
-    # --- GENERADOR DE PDF (MANTIENE EL LOGO EN EL DOCUMENTO DESCARGABLE) ---
+    # --- GENERADOR DE PDF ---
     def generar_pdf():
+        # Registrar fuentes que soportan el símbolo Unicode de colones ₡
+        font_regular = "Helvetica"
+        font_bold = "Helvetica-Bold"
+
+        rutas_fuente_regular = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "C:/Windows/Fonts/arial.ttf"
+        ]
+        rutas_fuente_bold = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+            "C:/Windows/Fonts/arialbd.ttf"
+        ]
+
+        for ruta in rutas_fuente_regular:
+            if os.path.exists(ruta):
+                try:
+                    pdfmetrics.registerFont(TTFont('UnicodeSans', ruta))
+                    font_regular = 'UnicodeSans'
+                    break
+                except Exception:
+                    pass
+
+        for ruta in rutas_fuente_bold:
+            if os.path.exists(ruta):
+                try:
+                    pdfmetrics.registerFont(TTFont('UnicodeSans-Bold', ruta))
+                    font_bold = 'UnicodeSans-Bold'
+                    break
+                except Exception:
+                    pass
+
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
         elements = []
         styles = getSampleStyleSheet()
         
-        title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=20, leading=22, textColor=colors.HexColor('#1E2D4A'), alignment=1)
-        sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
-        body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
+        title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName=font_bold, fontSize=20, leading=22, textColor=colors.HexColor('#1E2D4A'), alignment=1)
+        sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName=font_bold, fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
+        body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName=font_regular, fontSize=10, leading=12)
 
         # Logo en el PDF impreso
         if os.path.exists("logo.png"):
@@ -156,7 +191,7 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         elements.append(info_table)
         elements.append(Spacer(1, 15))
 
-        # Tabla de Detalles
+        # Tabla de Detalles con el símbolo de colones ₡
         table_data = [["Cant.", "Descripción", "P. Unitario", "Total"]]
         for item in st.session_state["items"]:
             table_data.append([
@@ -172,12 +207,13 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         t.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E2D4A')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (0,0), (-1,0), font_bold),
+            ('FONTNAME', (0,1), (-1,-1), font_regular),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('ALIGN', (2,1), (-1,-1), 'RIGHT'),
             ('BOTTOMPADDING', (0,0), (-1,0), 8),
             ('GRID', (0,0), (-1,-2), 0.5, colors.lightgrey),
-            ('FONTNAME', (-2,-1), (-1,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (-2,-1), (-1,-1), font_bold),
             ('BACKGROUND', (-2,-1), (-1,-1), colors.HexColor('#F4F1EA')),
         ]))
         

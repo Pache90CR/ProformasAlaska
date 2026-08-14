@@ -141,7 +141,7 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
                 pass
 
         # Encabezado PDF
-        elements.append(Paragraph("ALASKA BAR RESTAURANTE", title_style))
+        elements.append(Paragraph("BAR RESTAURANTE ALASKA", title_style))
         elements.append(Paragraph("Cotización / Proforma", sub_style))
         elements.append(Paragraph("Teléfonos: 7066 8903 / 8521 3829", sub_style))
         elements.append(Spacer(1, 15))
@@ -183,7 +183,7 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         
         elements.append(t)
         elements.append(Spacer(1, 30))
-        elements.append(Paragraph("<i>Gracias por preferir a Alaska Bar Restaurante. ¡Estamos para servirle!</i>", sub_style))
+        elements.append(Paragraph("<i>Gracias por preferirnos. ¡Estamos para servirle!</i>", sub_style))
 
         doc.build(elements)
         buffer.seek(0)

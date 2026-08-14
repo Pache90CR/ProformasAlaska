@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from datetime import date
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -29,10 +28,9 @@ st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True
 st.caption("📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829")
 st.divider()
 
-# --- VALIDACIÓN ROBUSTA DEL ESTADO DE LA SESIÓN ---
-# Si "items" no existe o fue guardado con un tipo incorrecto por errores previos, se reinicia como lista limpia.
+# --- INICIALIZACIÓN SEGURA Y RESETEABLE DE SESIÓN ---
 if "items" not in st.session_state or not isinstance(st.session_state.items, list):
-    st.session_state.items = []
+    st.session_state["items"] = []
 
 # --- DATOS DEL CLIENTE ---
 st.subheader("📋 Datos del Cliente y Evento")
@@ -62,11 +60,11 @@ with col_i3:
 
 if st.button("➕ Agregar Ítem", use_container_width=True):
     if descripcion.strip() != "" and precio > 0:
-        st.session_state.items.append({
-            "Descripción": descripcion,
-            "Cantidad": cantidad,
-            "Precio Unitario (₡)": precio,
-            "Total (₡)": cantidad * precio
+        st.session_state["items"].append({
+            "desc": descripcion.strip(),
+            "cant": int(cantidad),
+            "precio": float(precio),
+            "total": float(cantidad * precio)
         })
         st.success(f"¡'{descripcion}' agregado correctamente!")
         st.rerun()
@@ -77,24 +75,26 @@ if st.button("➕ Agregar Ítem", use_container_width=True):
 st.divider()
 st.subheader("📄 Resumen de Proforma")
 
-if st.session_state.items:
-    # Convertimos la lista a DataFrame
-    df = pd.DataFrame(st.session_state.items)
+if len(st.session_state["items"]) > 0:
+    # Mostramos los datos directamente con las tablas nativas de Streamlit (sin Pandas)
+    tabla_mostrar = []
+    subtotal = 0.0
     
-    # Formato para la vista en pantalla
-    df_display = df.copy()
-    df_display["Precio Unitario (₡)"] = df_display["Precio Unitario (₡)"].apply(lambda x: f"₡{x:,.2f}")
-    df_display["Total (₡)"] = df_display["Total (₡)"].apply(lambda x: f"₡{x:,.2f}")
+    for idx, item in enumerate(st.session_state["items"]):
+        subtotal += item["total"]
+        tabla_mostrar.append({
+            "Cant.": item["cant"],
+            "Descripción": item["desc"],
+            "P. Unitario": f"₡{item['precio']:,.2f}",
+            "Total": f"₡{item['total']:,.2f}"
+        })
     
-    st.dataframe(df_display, use_container_width=True)
-
-    # Cálculo de Totales
-    subtotal = df["Total (₡)"].sum()
+    st.table(tabla_mostrar)
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
     # Botón para limpiar proforma
     if st.button("🗑️ Vaciar Proforma"):
-        st.session_state.items = []
+        st.session_state["items"] = []
         st.rerun()
 
     # --- GENERADOR DE PDF ---
@@ -126,12 +126,12 @@ if st.session_state.items:
 
         # Tabla de Detalles
         table_data = [["Cant.", "Descripción", "P. Unitario", "Total"]]
-        for item in st.session_state.items:
+        for item in st.session_state["items"]:
             table_data.append([
-                str(item['Cantidad']),
-                item['Descripción'],
-                f"₡{item['Precio Unitario (₡)']:,.2f}",
-                f"₡{item['Total (₡)']:,.2f}"
+                str(item['cant']),
+                item['desc'],
+                f"₡{item['precio']:,.2f}",
+                f"₡{item['total']:,.2f}"
             ])
         
         table_data.append(["", "", "TOTAL:", f"₡{subtotal:,.2f}"])

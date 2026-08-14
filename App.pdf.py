@@ -62,40 +62,48 @@ st.subheader("📋 Datos del Cliente y Evento")
 col_c1, col_c2 = st.columns(2)
 
 with col_c1:
-    cliente = st.text_input("Nombre del Cliente / Empresa:", placeholder="Ej. María Rodríguez")
-    telefono_cliente = st.text_input("Teléfono del Cliente:", placeholder="Ej. 8888 8888")
+    cliente = st.text_input("Nombre del Cliente / Empresa:", placeholder="Ej. María Rodríguez", key="input_cliente")
+    telefono_cliente = st.text_input("Teléfono del Cliente:", placeholder="Ej. 8888 8888", key="input_telefono")
 
 with col_c2:
-    fecha_evento = st.date_input("Fecha del Evento:", value=date.today())
-    tipo_evento = st.selectbox("Tipo de Evento:", ["Cumpleaños", "Corporativo", "Reserva Especial", "Catering", "Otro"])
+    fecha_evento = st.date_input("Fecha del Evento:", value=date.today(), key="input_fecha")
+    tipo_evento = st.selectbox("Tipo de Evento:", ["Cumpleaños", "Corporativo", "Reserva Especial", "Catering", "Otro"], key="input_tipo")
 
 st.divider()
 
-# --- FORMULARIO DE AGREGAR ÍTEMS (RESUELVE EL PROBLEMA DE BUCLE/RECARGA) ---
+# --- AGREGAR ÍTEMS SIN FORMULARIO (MÁXIMA COMPATIBILIDAD CON CELULARES) ---
 st.subheader("🛒 Agregar Platillos / Servicios")
 
-with st.form("form_agregar_item", clear_on_submit=True):
-    descripcion = st.text_input("Descripción del Producto/Servicio:", placeholder="Ej. Plato Fuerte: Corte de Carne")
-    col_i1, col_i2 = st.columns(2)
-    with col_i1:
-        cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1)
-    with col_i2:
-        precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
-    
-    submitted = st.form_submit_button("➕ Agregar a la Proforma", use_container_width=True)
+descripcion = st.text_input("Descripción del Producto/Servicio:", placeholder="Ej. Plato Fuerte: Corte de Carne", key="item_desc")
 
-    if submitted:
-        if descripcion.strip() != "" and precio > 0:
-            st.session_state["items"].append({
-                "desc": descripcion.strip(),
-                "cant": int(cantidad),
-                "precio": float(precio),
-                "total": float(cantidad * precio)
-            })
-            st.success(f"¡'{descripcion}' agregado correctamente!")
-            st.rerun()
-        else:
-            st.error("⚠️ Por favor ingresa una descripción y un precio mayor a ₡0.")
+col_i1, col_i2 = st.columns(2)
+with col_i1:
+    cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1, key="item_cant")
+with col_i2:
+    precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0, key="item_precio")
+
+# Función callback para agregar ítem sin perder sincronía
+def agregar_item_callback():
+    desc_val = st.session_state.get("item_desc", "").strip()
+    cant_val = int(st.session_state.get("item_cant", 1))
+    precio_val = float(st.session_state.get("item_precio", 0.0))
+
+    if desc_val != "" and precio_val > 0:
+        st.session_state["items"].append({
+            "desc": desc_val,
+            "cant": cant_val,
+            "precio": precio_val,
+            "total": float(cant_val * precio_val)
+        })
+        # Limpiar campos de entrada para el siguiente producto
+        st.session_state["item_desc"] = ""
+        st.session_state["item_cant"] = 1
+        st.session_state["item_precio"] = 0.0
+        st.toast("✅ Ítem agregado correctamente")
+    else:
+        st.warning("⚠️ Ingresa una descripción y un precio mayor a ₡0.")
+
+st.button("➕ Agregar a la Proforma", on_click=agregar_item_callback, use_container_width=True)
 
 # --- TABLA Y TOTALES ---
 st.divider()
@@ -118,9 +126,10 @@ if len(st.session_state["items"]) > 0:
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
     # Botón para limpiar proforma
-    if st.button("🗑️ Vaciar Proforma", use_container_width=True):
+    def vaciar_proforma_callback():
         st.session_state["items"] = []
-        st.rerun()
+
+    st.button("🗑️ Vaciar Proforma", on_click=vaciar_proforma_callback, use_container_width=True)
 
     # --- GENERADOR DE PDF ---
     def generar_pdf():
@@ -206,4 +215,4 @@ if len(st.session_state["items"]) > 0:
     )
 
 else:
-    st.info("💡 Aún no has agregado ítems a esta proforma. Completa la descripción, cantidad y precio arriba, y presiona '➕ Agregar a la Proforma'.")
+    st.info("💡 Aún no has agregado ítems a esta proforma. Escribe la descripción y el precio, y toca '➕ Agregar a la Proforma'.")

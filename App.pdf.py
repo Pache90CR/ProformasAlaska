@@ -42,19 +42,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO Y LOGO CENTRADO ---
-if os.path.exists("logo.png"):
-    col_left, col_center, col_right = st.columns([1, 2, 1])
-    with col_center:
-        st.image("logo.png", width=190)
-
-
+# --- ENCABEZADO ---
 st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)
 st.markdown("<div class='contact-info'>📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829</div>", unsafe_allow_html=True)
 st.divider()
 
-# --- BLINDAJE DE SESIÓN: REPARAR 'items' SI NO ES UNA LISTA ---
+# --- BLINDAJE DE SESIÓN ---
 if "items" not in st.session_state or not isinstance(st.session_state["items"], list):
     st.session_state["items"] = []
 
@@ -83,10 +77,9 @@ with col_i1:
 with col_i2:
     precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
 
-# BOTÓN SEGURO
+# BOTÓN
 if st.button("➕ Agregar a la Proforma", use_container_width=True):
     if descripcion.strip() != "" and precio > 0:
-        # Verificación extra por seguridad antes de agregar
         if not isinstance(st.session_state["items"], list):
             st.session_state["items"] = []
             
@@ -126,7 +119,7 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         st.session_state["items"] = []
         st.rerun()
 
-    # --- GENERADOR DE PDF ---
+    # --- GENERADOR DE PDF (MANTIENE EL LOGO EN EL DOCUMENTO DESCARGABLE) ---
     def generar_pdf():
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
@@ -137,7 +130,7 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
 
-        # Logo en PDF si existe
+        # Logo en el PDF impreso
         if os.path.exists("logo.png"):
             try:
                 img_logo = Image("logo.png", width=90, height=90)

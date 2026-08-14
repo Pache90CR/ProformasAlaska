@@ -116,6 +116,13 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
     st.table(tabla_mostrar)
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
+    # --- CAMPO DE OBSERVACIONES ---
+    observaciones = st.text_area(
+        "📝 Observaciones o Condiciones Especiales:",
+        value="Se requiere un depósito del 50% para confirmar la reservación. Cotización válida por 15 días.",
+        help="Este texto aparecerá en el recuadro de observaciones en la parte inferior del PDF."
+    )
+
     # Botón para vaciar proforma
     if st.button("🗑️ Vaciar Proforma", use_container_width=True):
         st.session_state["items"] = []
@@ -204,7 +211,33 @@ if isinstance(st.session_state["items"], list) and len(st.session_state["items"]
         ]))
         
         elements.append(t)
-        elements.append(Spacer(1, 30))
+        elements.append(Spacer(1, 20))
+
+        # --- RECUADRO DE OBSERVACIONES ESTILIZADO (IGUAL A LA IMAGEN) ---
+        if observaciones.strip():
+            obs_header_style = ParagraphStyle('ObsHeader', fontName=font_bold, fontSize=9, textColor=colors.white, alignment=1)
+            obs_text_style = ParagraphStyle('ObsText', fontName=font_regular, fontSize=9, textColor=colors.HexColor('#2B2B2B'), leading=11)
+
+            obs_table_data = [
+                [Paragraph("OBSERVACIONES", obs_header_style), Paragraph(observaciones.strip(), obs_text_style)]
+            ]
+
+            obs_table = Table(obs_table_data, colWidths=[120, 420])
+            obs_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (0,0), colors.HexColor('#1E2D4A')), # Color corporativo azul marino
+                ('BACKGROUND', (1,0), (1,0), colors.white),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'CENTER'),
+                ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#1E2D4A')),
+                ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#1E2D4A')),
+                ('TOPPADDING', (0,0), (-1,-1), 8),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+                ('LEFTPADDING', (1,0), (1,0), 10),
+                ('RIGHTPADDING', (1,0), (1,0), 10),
+            ]))
+            elements.append(obs_table)
+            elements.append(Spacer(1, 20))
+
         elements.append(Paragraph("<i>Gracias por preferirnos. ¡Estamos para servirle!</i>", sub_style))
 
         doc.build(elements)

@@ -53,9 +53,9 @@ st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True
 st.markdown("<div class='contact-info'>📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829</div>", unsafe_allow_html=True)
 st.divider()
 
-# --- INICIALIZACIÓN SEGURA DE LA LISTA DE ÍTEMS ---
-if "items" not in st.session_state or not isinstance(st.session_state.items, list):
-    st.session_state.items = []
+# --- BLINDAJE DE SESIÓN: REPARAR 'items' SI NO ES UNA LISTA ---
+if "items" not in st.session_state or not isinstance(st.session_state["items"], list):
+    st.session_state["items"] = []
 
 # --- DATOS DEL CLIENTE ---
 st.subheader("📋 Datos del Cliente y Evento")
@@ -82,16 +82,20 @@ with col_i1:
 with col_i2:
     precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
 
-# BOTÓN CON LÓGICA DIRECTA Y RERUN
+# BOTÓN SEGURO
 if st.button("➕ Agregar a la Proforma", use_container_width=True):
     if descripcion.strip() != "" and precio > 0:
-        st.session_state.items.append({
+        # Verificación extra por seguridad antes de agregar
+        if not isinstance(st.session_state["items"], list):
+            st.session_state["items"] = []
+            
+        st.session_state["items"].append({
             "desc": descripcion.strip(),
             "cant": int(cantidad),
             "precio": float(precio),
             "total": float(cantidad * precio)
         })
-        st.success(f"¡'{descripcion}' agregado exitosamente!")
+        st.success(f"¡'{descripcion}' agregado correctamente!")
         st.rerun()
     else:
         st.warning("⚠️ Ingresa una descripción y un precio mayor a ₡0.")
@@ -100,11 +104,11 @@ if st.button("➕ Agregar a la Proforma", use_container_width=True):
 st.divider()
 st.subheader("📄 Resumen de Proforma")
 
-if len(st.session_state.items) > 0:
+if isinstance(st.session_state["items"], list) and len(st.session_state["items"]) > 0:
     tabla_mostrar = []
     subtotal = 0.0
     
-    for item in st.session_state.items:
+    for item in st.session_state["items"]:
         subtotal += item["total"]
         tabla_mostrar.append({
             "Cant.": item["cant"],
@@ -113,13 +117,12 @@ if len(st.session_state.items) > 0:
             "Total": f"₡{item['total']:,.2f}"
         })
     
-    # Muestra la tabla de productos ingresados
     st.table(tabla_mostrar)
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
-    # Botón para limpiar proforma
+    # Botón para vaciar proforma
     if st.button("🗑️ Vaciar Proforma", use_container_width=True):
-        st.session_state.items = []
+        st.session_state["items"] = []
         st.rerun()
 
     # --- GENERADOR DE PDF ---
@@ -133,7 +136,7 @@ if len(st.session_state.items) > 0:
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
 
-        # 1. Agregar Logo en PDF si existe
+        # Logo en PDF si existe
         if os.path.exists("logo.png"):
             try:
                 img_logo = Image("logo.png", width=90, height=90)
@@ -161,7 +164,7 @@ if len(st.session_state.items) > 0:
 
         # Tabla de Detalles
         table_data = [["Cant.", "Descripción", "P. Unitario", "Total"]]
-        for item in st.session_state.items:
+        for item in st.session_state["items"]:
             table_data.append([
                 str(item['cant']),
                 item['desc'],

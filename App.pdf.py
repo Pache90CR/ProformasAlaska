@@ -42,11 +42,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO Y LOGO EN PANTALLA ---
+# --- ENCABEZADO Y LOGO PEQUEÑO EN PANTALLA ---
 if os.path.exists("logo.png"):
-    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+    col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
     with col_l2:
-        st.image("logo.png", use_container_width=True)
+        st.image("logo.png", width=140)
 
 st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)
@@ -71,30 +71,31 @@ with col_c2:
 
 st.divider()
 
-# --- AGREGAR ÍTEMS ---
+# --- FORMULARIO DE AGREGAR ÍTEMS (RESUELVE EL PROBLEMA DE BUCLE/RECARGA) ---
 st.subheader("🛒 Agregar Platillos / Servicios")
 
-col_i1, col_i2, col_i3 = st.columns([3, 1, 1])
-
-with col_i1:
+with st.form("form_agregar_item", clear_on_submit=True):
     descripcion = st.text_input("Descripción del Producto/Servicio:", placeholder="Ej. Plato Fuerte: Corte de Carne")
-with col_i2:
-    cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1)
-with col_i3:
-    precio = st.number_input("Precio Unit. (₡):", min_value=0.0, value=0.0, step=500.0)
+    col_i1, col_i2 = st.columns(2)
+    with col_i1:
+        cantidad = st.number_input("Cantidad:", min_value=1, value=1, step=1)
+    with col_i2:
+        precio = st.number_input("Precio Unitario (₡):", min_value=0.0, value=0.0, step=500.0)
+    
+    submitted = st.form_submit_button("➕ Agregar a la Proforma", use_container_width=True)
 
-if st.button("➕ Agregar Ítem", use_container_width=True):
-    if descripcion.strip() != "" and precio > 0:
-        st.session_state["items"].append({
-            "desc": descripcion.strip(),
-            "cant": int(cantidad),
-            "precio": float(precio),
-            "total": float(cantidad * precio)
-        })
-        st.success(f"¡'{descripcion}' agregado correctamente!")
-        st.rerun()
-    else:
-        st.warning("Por favor ingresa una descripción y un precio mayor a 0.")
+    if submitted:
+        if descripcion.strip() != "" and precio > 0:
+            st.session_state["items"].append({
+                "desc": descripcion.strip(),
+                "cant": int(cantidad),
+                "precio": float(precio),
+                "total": float(cantidad * precio)
+            })
+            st.success(f"¡'{descripcion}' agregado correctamente!")
+            st.rerun()
+        else:
+            st.error("⚠️ Por favor ingresa una descripción y un precio mayor a ₡0.")
 
 # --- TABLA Y TOTALES ---
 st.divider()
@@ -117,7 +118,7 @@ if len(st.session_state["items"]) > 0:
     st.markdown(f"### **Total General: ₡{subtotal:,.2f}**")
 
     # Botón para limpiar proforma
-    if st.button("🗑️ Vaciar Proforma"):
+    if st.button("🗑️ Vaciar Proforma", use_container_width=True):
         st.session_state["items"] = []
         st.rerun()
 
@@ -132,10 +133,10 @@ if len(st.session_state["items"]) > 0:
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
 
-        # 1. Agregar Logo si existe en el repositorio
+        # 1. Agregar Logo en PDF
         if os.path.exists("logo.png"):
             try:
-                img_logo = Image("logo.png", width=110, height=110)
+                img_logo = Image("logo.png", width=90, height=90)
                 img_logo.hAlign = 'CENTER'
                 elements.append(img_logo)
                 elements.append(Spacer(1, 10))
@@ -205,4 +206,4 @@ if len(st.session_state["items"]) > 0:
     )
 
 else:
-    st.info("💡 Aún no has agregado ítems a esta proforma. Llena los datos arriba y presiona '+ Agregar Ítem'.")
+    st.info("💡 Aún no has agregado ítems a esta proforma. Completa la descripción, cantidad y precio arriba, y presiona '➕ Agregar a la Proforma'.")

@@ -29,8 +29,9 @@ st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True
 st.caption("📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829")
 st.divider()
 
-# --- ESTADO DE LA SESIÓN ---
-if "items" not in st.session_state:
+# --- VALIDACIÓN ROBUSTA DEL ESTADO DE LA SESIÓN ---
+# Si "items" no existe o fue guardado con un tipo incorrecto por errores previos, se reinicia como lista limpia.
+if "items" not in st.session_state or not isinstance(st.session_state.items, list):
     st.session_state.items = []
 
 # --- DATOS DEL CLIENTE ---
@@ -76,8 +77,8 @@ if st.button("➕ Agregar Ítem", use_container_width=True):
 st.divider()
 st.subheader("📄 Resumen de Proforma")
 
-if len(st.session_state.items) > 0:
-    # Convertimos la lista a DataFrame sólo cuando tiene datos
+if st.session_state.items:
+    # Convertimos la lista a DataFrame
     df = pd.DataFrame(st.session_state.items)
     
     # Formato para la vista en pantalla

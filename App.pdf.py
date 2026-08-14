@@ -1,8 +1,9 @@
 import streamlit as st
+import os
 from datetime import date
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
@@ -13,22 +14,46 @@ st.set_page_config(
     layout="centered"
 )
 
-# Estilos visuales
+# Estilos adaptables automáticamente al Modo Claro y Modo Oscuro
 st.markdown("""
     <style>
-    .stApp { background-color: #F4F1EA; }
-    .main-title { color: #1E2D4A; text-align: center; font-weight: bold; margin-bottom: 0px; }
-    .sub-title { color: #555555; text-align: center; font-weight: bold; margin-top: 0px; }
+    .main-title {
+        color: var(--text-color);
+        text-align: center;
+        font-weight: 800;
+        font-size: 2.2rem;
+        margin-bottom: 0px;
+        letter-spacing: 2px;
+    }
+    .sub-title {
+        color: var(--text-color);
+        opacity: 0.8;
+        text-align: center;
+        font-weight: 600;
+        margin-top: 0px;
+        letter-spacing: 1px;
+    }
+    .contact-info {
+        text-align: center;
+        font-size: 0.9rem;
+        opacity: 0.7;
+        margin-bottom: 15px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO ---
-st.markdown("<h1 class='main-title'>🏔️ ALASKA</h1>", unsafe_allow_html=True)
+# --- ENCABEZADO Y LOGO EN PANTALLA ---
+if os.path.exists("logo.png"):
+    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+    with col_l2:
+        st.image("logo.png", use_container_width=True)
+
+st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)
-st.caption("📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829")
+st.markdown("<div class='contact-info'>📍 Cotizaciones y Proformas | 📞 7066 8903 / 8521 3829</div>", unsafe_allow_html=True)
 st.divider()
 
-# --- INICIALIZACIÓN SEGURA Y RESETEABLE DE SESIÓN ---
+# --- INICIALIZACIÓN SEGURA DE SESIÓN ---
 if "items" not in st.session_state or not isinstance(st.session_state.items, list):
     st.session_state["items"] = []
 
@@ -76,11 +101,10 @@ st.divider()
 st.subheader("📄 Resumen de Proforma")
 
 if len(st.session_state["items"]) > 0:
-    # Mostramos los datos directamente con las tablas nativas de Streamlit (sin Pandas)
     tabla_mostrar = []
     subtotal = 0.0
     
-    for idx, item in enumerate(st.session_state["items"]):
+    for item in st.session_state["items"]:
         subtotal += item["total"]
         tabla_mostrar.append({
             "Cant.": item["cant"],
@@ -107,6 +131,16 @@ if len(st.session_state["items"]) > 0:
         title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=20, leading=22, textColor=colors.HexColor('#1E2D4A'), alignment=1)
         sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#555555'), alignment=1)
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12)
+
+        # 1. Agregar Logo si existe en el repositorio
+        if os.path.exists("logo.png"):
+            try:
+                img_logo = Image("logo.png", width=110, height=110)
+                img_logo.hAlign = 'CENTER'
+                elements.append(img_logo)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
 
         # Encabezado PDF
         elements.append(Paragraph("ALASKA BAR RESTAURANTE", title_style))

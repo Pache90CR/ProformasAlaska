@@ -42,11 +42,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ENCABEZADO Y LOGO EN PANTALLA ---
+# --- ENCABEZADO Y LOGO CENTRADO ---
 if os.path.exists("logo.png"):
-    col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
-    with col_l2:
-        st.image("logo.png", width=180)
+    col_left, col_center, col_right = st.columns([1, 2, 1])
+    with col_center:
+        st.image("logo.png", width=190)
+
 
 st.markdown("<h1 class='main-title'>ALASKA</h1>", unsafe_allow_html=True)
 st.markdown("<h3 class='sub-title'>BAR RESTAURANTE</h3>", unsafe_allow_html=True)
